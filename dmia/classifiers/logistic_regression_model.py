@@ -91,7 +91,7 @@ class LogisticRegression:
         # Implement this method. Store the probabilities of classes in y_proba.   #
         # Hint: It might be helpful to use np.vstack and np.sum                   #
         ###########################################################################
-        y_pos = 1 / (1 + np.exp((-1)*X.dot(self.w)))
+        y_pos = np.reshape(1 / (1 + np.exp(-X.dot(self.w))), (-1, 1))
         y_neg = 1 - y_pos
         y_proba = np.hstack((y_neg, y_pos))
         ###########################################################################
@@ -137,17 +137,16 @@ class LogisticRegression:
         dw = np.zeros_like(self.w)  # initialize the gradient as zero
         loss = 0
         # Compute loss and gradient. Your code should not contain python loops.
-        h_func = 1 / (1 + np.exp((-1)*X_batch.dot(self.w)))
-        loss = (-1/X_batch.shape[1])*np.sum(np.multiply(y_batch, np.log(h_func)) +
-                                            np.multiply((1-y_batch), np.log(1-h_func)))
+        h_func = 1 / (1 + np.exp(-(X_batch.dot(self.w))))
+        loss = np.sum(-y_batch*np.log(h_func) - (1-y_batch)*np.log(1-h_func)) / X_batch.shape[0]
 
         residual = np.reshape(h_func - y_batch, (-1, 1))
-        dw = np.reshape((1/X_batch.shape[0])*X_batch.T.dot(residual), -1)
+        dw = np.reshape(X_batch.T.dot(residual) / X_batch.shape[0], -1)
         # Right now the loss is a sum over all training examples, but we want it
         # to be an average instead so we divide by num_train.
         # Note that the same thing must be done with gradient.
-        loss += (reg/X_batch.shape[1])*np.sum(np.square(self.w[:-1]))
-        dw[:-1] -= (reg/X_batch.shape[1])*self.w[:-1]
+        loss += reg*np.sum(np.abs(self.w[:-1])) / X_batch.shape[0]
+        dw[:-1] += reg*np.sign(self.w[:-1])/X_batch.shape[0]
         # Add regularization to the loss and gradient.
         # Note that you have to exclude bias term in regularization.
 
